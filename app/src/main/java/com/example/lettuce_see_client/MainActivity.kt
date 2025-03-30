@@ -44,30 +44,45 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
+import androidx.annotation.DrawableRes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.core.content.ContextCompat
 import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.colorResource
 
 class MainActivity : ComponentActivity() {
     private val ultralyticsService = UltralyticsService()
+    private var selectedTab by mutableStateOf(BottomNavItem.Settings)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             LettuceSeeClientTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = { BottomNavigationBar { selectedOption -> handleNavSelection(selectedOption) } }
+                ) { innerPadding ->
                     MainScreen(
                         modifier = Modifier.padding(innerPadding),
-                        ultralyticsService = ultralyticsService
+                        ultralyticsService = ultralyticsService,
+                        selectedTab = selectedTab
                     )
                 }
             }
         }
     }
+
+    private fun handleNavSelection(selectedOption: BottomNavItem) {
+        selectedTab = selectedOption
+    }
 }
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsService) {
+fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsService, selectedTab: BottomNavItem) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var processedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -208,34 +223,25 @@ fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsSer
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = {
+        LaunchedEffect(selectedTab) {
+            when (selectedTab) {
+                BottomNavItem.TakePhoto -> {
                     val hasPermissions = requiredPermissions.all {
                         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
                     }
-
                     if (hasPermissions) {
                         launchCameraWithUri(context) { uri ->
                             selectedImageUri = uri
                             cameraLauncher.launch(uri)
                         }
                     } else {
-                        // Request permissions
+                        showPermissionDialog = true
                         multiplePermissionsLauncher.launch(requiredPermissions)
                     }
                 }
-            ) {
-                Text("Take Photo")
-            }
 
-            Button(
-                onClick = { galleryLauncher.launch("image/*") }
-            ) {
-                Text("Choose from Gallery")
+                BottomNavItem.ChooseGallery -> galleryLauncher.launch("image/*")
+                BottomNavItem.Settings -> {} // Do nothing yet
             }
         }
     }
@@ -347,7 +353,7 @@ private fun drawDetections(originalBitmap: Bitmap, response: DetectionResponse):
     val canvas = Canvas(mutableBitmap)
 
     // Define colors for different classes
-    val healthyColor = Color.BLUE
+    val healthyColor = Color.GREEN
     val unhealthyColor = Color.RED
     val weedColor = Color.YELLOW
 
@@ -364,7 +370,7 @@ private fun drawDetections(originalBitmap: Bitmap, response: DetectionResponse):
         val boxPaint = Paint().apply {
             this.color = color
             style = Paint.Style.STROKE
-            strokeWidth = 20f
+            strokeWidth = 5f
         }
 
         val textPaint = Paint().apply {
@@ -392,6 +398,44 @@ private fun drawDetections(originalBitmap: Bitmap, response: DetectionResponse):
     }
 
     return mutableBitmap
+}
+
+@Composable
+fun BottomNavigationBar(onItemSelected: (BottomNavItem) -> Unit) {
+    var selectedTab by remember { mutableStateOf<BottomNavItem?>(null) }
+
+    NavigationBar {
+        BottomNavItem.values().forEach { item ->
+            NavigationBarItem(
+                selected = selectedTab == item,
+                onClick = {
+                    selectedTab = item
+                    onItemSelected(item)
+                },
+                icon = {
+                    Icon(
+                        painter = painterResource(id = item.iconRes),
+                        contentDescription = item.label,
+                        tint = if (selectedTab == item) colorResource(R.color.nav_item_color) else colorResource(R.color.gray)
+                    )
+                },
+                label = { Text(
+                    item.label,
+                    color = if (selectedTab == item) colorResource(R.color.nav_item_color) else colorResource(R.color.gray)
+                ) },
+                alwaysShowLabel = false,
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = colorResource(R.color.transparent)
+                )
+            )
+        }
+    }
+}
+
+enum class BottomNavItem(val label: String, @DrawableRes val iconRes: Int) {
+    Settings("Settings", R.drawable.baseline_settings_24),
+    TakePhoto("Take Photo", R.drawable.baseline_camera_alt_24),
+    ChooseGallery("Gallery", R.drawable.baseline_add_photo_alternate_24)
 }
 
 //private fun createImageFile(context: Context): File {
