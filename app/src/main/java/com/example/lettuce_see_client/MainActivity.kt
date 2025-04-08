@@ -52,6 +52,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.colorResource
+import java.io.OutputStream
+import android.content.ContentValues
 
 class MainActivity : ComponentActivity() {
     private val ultralyticsService = UltralyticsService()
@@ -221,6 +223,16 @@ fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsSer
                     .fillMaxWidth(),
                 contentScale = ContentScale.Fit
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    saveImageToGallery(context, bitmap)
+                }
+            ) {
+                Text("Save Image")
+            }
         }
 
         LaunchedEffect(selectedTab) {
@@ -398,6 +410,34 @@ private fun drawDetections(originalBitmap: Bitmap, response: DetectionResponse):
     }
 
     return mutableBitmap
+}
+
+fun saveImageToGallery(context: Context, bitmap: Bitmap) {
+    val filename = "processed_image_${System.currentTimeMillis()}.jpg"
+    val fos: OutputStream?
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/LettuceSee")
+        }
+
+        val imageUri: Uri? = context.contentResolver.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
+        )
+
+        fos = imageUri?.let { context.contentResolver.openOutputStream(it) }
+    } else {
+        val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString()
+        val image = File(imagesDir, filename)
+        fos = FileOutputStream(image)
+    }
+
+    fos?.use {
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+        Toast.makeText(context, "Image saved to gallery", Toast.LENGTH_SHORT).show()
+    } ?: Toast.makeText(context, "Failed to save image", Toast.LENGTH_SHORT).show()
 }
 
 @Composable
