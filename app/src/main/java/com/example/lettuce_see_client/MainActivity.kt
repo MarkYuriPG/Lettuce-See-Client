@@ -54,10 +54,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.colorResource
 import java.io.OutputStream
 import android.content.ContentValues
+import androidx.compose.ui.text.style.TextAlign
 
 class MainActivity : ComponentActivity() {
     private val ultralyticsService = UltralyticsService()
-    private var selectedTab by mutableStateOf(BottomNavItem.Settings)
+    private var selectedTab by mutableStateOf(BottomNavItem.TakePhoto)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
             LettuceSeeClientTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    bottomBar = { BottomNavigationBar { selectedOption -> handleNavSelection(selectedOption) } }
+                    bottomBar = { BottomNavigationBar() { selectedOption -> handleNavSelection(selectedOption) } }
                 ) { innerPadding ->
                     MainScreen(
                         modifier = Modifier.padding(innerPadding),
@@ -208,30 +209,51 @@ fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsSer
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.Center
     ) {
-        if (isLoading) {
-            CircularProgressIndicator()
-        }
+        when {
+            isLoading -> {
+                CircularProgressIndicator(
+                    color = colorResource(R.color.nav_item_color)
+                )
+            }
+            processedBitmap != null -> {
+                processedBitmap ?. let { bitmap ->
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Processed Image",
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentScale = ContentScale.Fit
+                    )
 
-        processedBitmap?.let { bitmap ->
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Processed Image",
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentScale = ContentScale.Fit
-            )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = {
-                    saveImageToGallery(context, bitmap)
+                    Button(
+                        onClick = {
+                            saveImageToGallery(context, bitmap)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(R.color.nav_item_color)
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_file_download_24),
+                            contentDescription = "Download Icon"
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Save")
+                    }
                 }
-            ) {
-                Text("Save Image")
+            }
+            else -> {
+                Text(
+                    text = "Welcome! \n\nTap the 📷 icon to take a photo or 🖼️ to choose from gallery.\nWe'll process it for lettuce health & detection magic!",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
 
@@ -253,7 +275,10 @@ fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsSer
                 }
 
                 BottomNavItem.ChooseGallery -> galleryLauncher.launch("image/*")
-                BottomNavItem.Settings -> {} // Do nothing yet
+                BottomNavItem.Settings -> {
+                    val intent = Intent(context, SettingsActivity::class.java)
+                    context.startActivity(intent)
+                }
             }
         }
     }
@@ -449,8 +474,9 @@ fun BottomNavigationBar(onItemSelected: (BottomNavItem) -> Unit) {
             NavigationBarItem(
                 selected = selectedTab == item,
                 onClick = {
-                    selectedTab = item
                     onItemSelected(item)
+                    selectedTab = item
+
                 },
                 icon = {
                     Icon(
