@@ -18,11 +18,22 @@
         android:text="Dark Theme" />
 
     <Button
-        android:id="@+id/boundingColorButton"
-        android:layout_width="wrap_content"
+        android:id="@+id/colorHealthyButton"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Bounding Box Color"
-        android:layout_marginTop="16dp" />
+        android:text="Select Healthy Color" />
+
+    <Button
+        android:id="@+id/colorUnhealthyButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Unhealthy Color" />
+
+    <Button
+        android:id="@+id/colorWeedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Weed Color" />
 
     <Button
         android:id="@+id/saveSettingsButton"

@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         setContent {
             LettuceSeeClientTheme {
@@ -249,7 +250,7 @@ fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsSer
             }
             else -> {
                 Text(
-                    text = "Welcome! \n\nTap the 📷 icon to take a photo or 🖼️ to choose from gallery.\nWe'll process it for lettuce health & detection magic!",
+                    text = "Welcome! \n\nTap the 📷 icon to take a photo or 🖼️ to choose from gallery to get started!",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(16.dp)
@@ -354,7 +355,7 @@ private fun processImage(
                                 val originalBitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                                 println("Debug - Original bitmap size: ${originalBitmap.width}x${originalBitmap.height}")
 
-                                val processedBitmap = drawDetections(originalBitmap, response)
+                                val processedBitmap = drawDetections(context, originalBitmap, response)
                                 println("Debug - Processed bitmap created")
 
                                 onResult(processedBitmap)
@@ -385,14 +386,15 @@ private fun processImage(
 }
 
 
-private fun drawDetections(originalBitmap: Bitmap, response: DetectionResponse): Bitmap {
+private fun drawDetections(context: Context, originalBitmap: Bitmap, response: DetectionResponse): Bitmap {
     val mutableBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true)
     val canvas = Canvas(mutableBitmap)
+    val prefs = context.getSharedPreferences("SettingsPrefs", Context.MODE_PRIVATE)
 
     // Define colors for different classes
-    val healthyColor = Color.GREEN
-    val unhealthyColor = Color.RED
-    val weedColor = Color.YELLOW
+    val healthyColor = prefs.getInt("color_healthy", Color.GREEN)
+    val unhealthyColor = prefs.getInt("color_unhealthy", Color.RED)
+    val weedColor = prefs.getInt("color_weed", Color.YELLOW)
 
     response.images?.firstOrNull()?.results?.forEach { detection ->
         // Set color and label based on detection name
