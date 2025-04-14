@@ -56,13 +56,15 @@ import java.io.OutputStream
 import android.content.ContentValues
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.text.style.TextAlign
+import androidx.core.view.WindowCompat
 
 class MainActivity : ComponentActivity() {
     private val ultralyticsService = UltralyticsService()
     private var selectedTab by mutableStateOf(BottomNavItem.TakePhoto)
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        WindowCompat.setDecorFitsSystemWindows(window, true)
 
         val prefs = getSharedPreferences("SettingsPrefs", Context.MODE_PRIVATE)
         val isDarkTheme = prefs.getString("theme", "light") == "dark"
