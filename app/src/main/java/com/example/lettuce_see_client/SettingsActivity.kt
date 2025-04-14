@@ -1,6 +1,7 @@
 package com.example.lettuce_see_client
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -12,6 +13,8 @@ import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import com.example.lettuce_see_client.ColorPickerDialog
 import com.example.lettuce_see_client.R
 
@@ -43,29 +46,36 @@ class SettingsActivity : AppCompatActivity() {
         pathEditText.setText(savedPath)
         themeSwitch.isChecked = savedTheme == "dark"
 
-        healthyColorBtn.setBackgroundColor(healthyColor)
-        unhealthyColorBtn.setBackgroundColor(unhealthyColor)
-        weedColorBtn.setBackgroundColor(weedColor)
+        fun tintCircleButton(context: Context, button: Button, color: Int) {
+            val baseDrawable = ContextCompat.getDrawable(context, R.drawable.circle_button)!!.mutate()
+            val wrappedDrawable = DrawableCompat.wrap(baseDrawable)
+            DrawableCompat.setTint(wrappedDrawable, color)
+            button.background = wrappedDrawable
+        }
 
-        // Set up color picker button
+        tintCircleButton(this, healthyColorBtn, healthyColor)
+        tintCircleButton(this, unhealthyColorBtn, unhealthyColor)
+        tintCircleButton(this, weedColorBtn, weedColor)
+
         var selectedHealthyColor = healthyColor
+        var selectedUnhealthyColor = unhealthyColor
+        var selectedWeedColor = weedColor
+
         healthyColorBtn.setOnClickListener {
             ColorPickerDialog(this) { color ->
-                healthyColorBtn.setBackgroundColor(color)
+                tintCircleButton(this, healthyColorBtn, color)
                 selectedHealthyColor = color
             }.show()
         }
-        var selectedUnhealthyColor = unhealthyColor
         unhealthyColorBtn.setOnClickListener {
             ColorPickerDialog(this) { color ->
-                unhealthyColorBtn.setBackgroundColor(color)
+                tintCircleButton(this, unhealthyColorBtn, color)
                 selectedUnhealthyColor = color
             }.show()
         }
-        var selectedWeedColor = weedColor
         weedColorBtn.setOnClickListener {
             ColorPickerDialog(this) { color ->
-                weedColorBtn.setBackgroundColor(color)
+                tintCircleButton(this, weedColorBtn, color)
                 selectedWeedColor = color
             }.show()
         }
@@ -73,6 +83,8 @@ class SettingsActivity : AppCompatActivity() {
         // Save settings when changed
         findViewById<Button>(R.id.saveSettingsButton).setOnClickListener {
             val newPath = pathEditText.text.toString()
+            val isDarkMode = themeSwitch.isChecked
+            val newTheme = if (isDarkMode) "dark" else "light"
             val newHealthyColor = selectedHealthyColor
             val newUnhealthyColor = selectedUnhealthyColor
             val newWeedColor = selectedWeedColor
@@ -86,13 +98,17 @@ class SettingsActivity : AppCompatActivity() {
             // Save new settings to SharedPreferences
             sharedPreferences.edit().apply {
                 putString("save_path", newPath)
+                putString("theme", newTheme)
                 putInt("color_healthy", newHealthyColor)
                 putInt("color_unhealthy", newUnhealthyColor)
                 putInt("color_weed", newWeedColor)
             }.apply()
 
-            // Go back to previous screen
-            finish()
+            // Restart MainActivity to apply theme change
+            val intent = Intent(this, MainActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            finish() // finish SettingsActivity
         }
     }
 }

@@ -54,18 +54,24 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.colorResource
 import java.io.OutputStream
 import android.content.ContentValues
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.text.style.TextAlign
 
 class MainActivity : ComponentActivity() {
     private val ultralyticsService = UltralyticsService()
     private var selectedTab by mutableStateOf(BottomNavItem.TakePhoto)
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        val prefs = getSharedPreferences("SettingsPrefs", Context.MODE_PRIVATE)
+        val isDarkTheme = prefs.getString("theme", "light") == "dark"
+
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
         setContent {
-            LettuceSeeClientTheme {
+            LettuceSeeClientTheme(darkTheme = isDarkTheme) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = { BottomNavigationBar() { selectedOption -> handleNavSelection(selectedOption) } }

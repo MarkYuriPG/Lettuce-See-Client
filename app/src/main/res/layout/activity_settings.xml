@@ -1,43 +1,213 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/material_dynamic_neutral95"
+    android:padding="0dp">
 
-    <EditText
-        android:id="@+id/pathEditText"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Save File Path"
-        android:inputType="text" />
+        android:layout_marginBottom="16dp"
+        android:divider="?android:attr/dividerHorizontal"
+        android:dividerPadding="0dp"
+        android:orientation="vertical">
 
-    <Switch
-        android:id="@+id/themeSwitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Dark Theme" />
+        <!-- Path Setting -->
 
-    <Button
-        android:id="@+id/colorHealthyButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Select Healthy Color" />
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FDFDFD"
+            android:paddingTop="20dp">
 
-    <Button
-        android:id="@+id/colorUnhealthyButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Select Unhealthy Color" />
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:text="Settings"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </FrameLayout>
 
-    <Button
-        android:id="@+id/colorWeedButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Select Weed Color" />
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="3dp"
+            android:text="General"
+            android:textSize="14sp" />
 
-    <Button
-        android:id="@+id/saveSettingsButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Save Settings" />
-</LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FDFDFD"
+            android:divider="?android:attr/dividerHorizontal"
+            android:dividerPadding="0dp"
+            android:orientation="vertical"
+            android:showDividers="middle">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginVertical="4dp"
+                android:layout_marginHorizontal="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="16dp"
+                    android:text="Save Path"
+                    android:textColor="?android:textColorPrimary"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/pathEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:drawable/editbox_background"
+                    android:hint="Enter path here"
+                    android:padding="8dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="4dp"
+                android:layout_marginHorizontal="10dp"
+                android:orientation="horizontal"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Dark Theme"
+                    android:textColor="?android:textColorPrimary"
+                    android:textSize="16sp" />
+
+                <Switch
+                    android:id="@+id/themeSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Theme Switch -->
+
+        <!-- Color Settings -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginBottom="3dp"
+            android:text="Bounding Box Colors"
+            android:textColor="?android:textColorPrimary"
+            android:textSize="14sp" />
+
+        <!-- Healthy -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FDFDFD"
+            android:divider="?android:attr/dividerHorizontal"
+            android:dividerPadding="0dp"
+            android:orientation="vertical"
+            android:showDividers="middle">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginVertical="2dp"
+                android:layout_marginHorizontal="10dp"
+                android:orientation="horizontal"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Healthy"
+                    android:textColor="?android:textColorPrimary"
+                    android:textSize="16sp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/colorHealthyButton"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/circle_button" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginVertical="2dp"
+                android:layout_marginHorizontal="10dp"
+                android:orientation="horizontal"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Unhealthy"
+                    android:textColor="?android:textColorPrimary"
+                    android:textSize="16sp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/colorUnhealthyButton"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/circle_button" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginVertical="2dp"
+                android:layout_marginHorizontal="10dp"
+                android:orientation="horizontal"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Weed"
+                    android:textColor="?android:textColorPrimary"
+                    android:textSize="16sp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/colorWeedButton"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/circle_button" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Save Button -->
+        <Button
+            android:id="@+id/saveSettingsButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginHorizontal="35dp"
+            android:backgroundTint="?android:attr/colorAccent"
+            android:text="Save Settings"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+</ScrollView>
