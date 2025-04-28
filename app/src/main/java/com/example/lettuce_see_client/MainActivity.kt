@@ -44,30 +44,57 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
+import androidx.annotation.DrawableRes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.core.content.ContextCompat
 import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.colorResource
+import java.io.OutputStream
+import android.content.ContentValues
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.ui.text.style.TextAlign
+import androidx.core.view.WindowCompat
 
 class MainActivity : ComponentActivity() {
     private val ultralyticsService = UltralyticsService()
+    private var selectedTab by mutableStateOf(BottomNavItem.TakePhoto)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+
+        val prefs = getSharedPreferences("SettingsPrefs", Context.MODE_PRIVATE)
+        val isDarkTheme = prefs.getString("theme", "light") == "dark"
+
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         setContent {
-            LettuceSeeClientTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            LettuceSeeClientTheme(darkTheme = isDarkTheme) {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = { BottomNavigationBar() { selectedOption -> handleNavSelection(selectedOption) } }
+                ) { innerPadding ->
                     MainScreen(
                         modifier = Modifier.padding(innerPadding),
-                        ultralyticsService = ultralyticsService
+                        ultralyticsService = ultralyticsService,
+                        selectedTab = selectedTab
                     )
                 }
             }
         }
     }
+
+    private fun handleNavSelection(selectedOption: BottomNavItem) {
+        selectedTab = selectedOption
+    }
 }
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsService) {
+fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsService, selectedTab: BottomNavItem) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var processedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -191,51 +218,76 @@ fun MainScreen(modifier: Modifier = Modifier, ultralyticsService: UltralyticsSer
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.Center
     ) {
-        if (isLoading) {
-            CircularProgressIndicator()
+        when {
+            isLoading -> {
+                CircularProgressIndicator(
+                    color = colorResource(R.color.nav_item_color)
+                )
+            }
+            processedBitmap != null -> {
+                processedBitmap ?. let { bitmap ->
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Processed Image",
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            saveImageToGallery(context, bitmap)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(R.color.nav_item_color)
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_file_download_24),
+                            contentDescription = "Download Icon"
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Save")
+                    }
+                }
+            }
+            else -> {
+                Text(
+                    text = "Welcome! \n\nTap the 📷 icon to take a photo or 🖼️ to choose from gallery to get started!",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
         }
 
-        processedBitmap?.let { bitmap ->
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Processed Image",
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentScale = ContentScale.Fit
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = {
+        LaunchedEffect(selectedTab) {
+            when (selectedTab) {
+                BottomNavItem.TakePhoto -> {
                     val hasPermissions = requiredPermissions.all {
                         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
                     }
-
                     if (hasPermissions) {
                         launchCameraWithUri(context) { uri ->
                             selectedImageUri = uri
                             cameraLauncher.launch(uri)
                         }
                     } else {
-                        // Request permissions
+                        showPermissionDialog = true
                         multiplePermissionsLauncher.launch(requiredPermissions)
                     }
                 }
-            ) {
-                Text("Take Photo")
-            }
 
-            Button(
-                onClick = { galleryLauncher.launch("image/*") }
-            ) {
-                Text("Choose from Gallery")
+                BottomNavItem.ChooseGallery -> galleryLauncher.launch("image/*")
+                BottomNavItem.Settings -> {
+                    val intent = Intent(context, SettingsActivity::class.java)
+                    context.startActivity(intent)
+                }
             }
         }
     }
@@ -311,7 +363,7 @@ private fun processImage(
                                 val originalBitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                                 println("Debug - Original bitmap size: ${originalBitmap.width}x${originalBitmap.height}")
 
-                                val processedBitmap = drawDetections(originalBitmap, response)
+                                val processedBitmap = drawDetections(context, originalBitmap, response)
                                 println("Debug - Processed bitmap created")
 
                                 onResult(processedBitmap)
@@ -342,14 +394,15 @@ private fun processImage(
 }
 
 
-private fun drawDetections(originalBitmap: Bitmap, response: DetectionResponse): Bitmap {
+private fun drawDetections(context: Context, originalBitmap: Bitmap, response: DetectionResponse): Bitmap {
     val mutableBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true)
     val canvas = Canvas(mutableBitmap)
+    val prefs = context.getSharedPreferences("SettingsPrefs", Context.MODE_PRIVATE)
 
     // Define colors for different classes
-    val healthyColor = Color.BLUE
-    val unhealthyColor = Color.RED
-    val weedColor = Color.YELLOW
+    val healthyColor = prefs.getInt("color_healthy", Color.GREEN)
+    val unhealthyColor = prefs.getInt("color_unhealthy", Color.RED)
+    val weedColor = prefs.getInt("color_weed", Color.YELLOW)
 
     response.images?.firstOrNull()?.results?.forEach { detection ->
         // Set color and label based on detection name
@@ -364,7 +417,7 @@ private fun drawDetections(originalBitmap: Bitmap, response: DetectionResponse):
         val boxPaint = Paint().apply {
             this.color = color
             style = Paint.Style.STROKE
-            strokeWidth = 20f
+            strokeWidth = 5f
         }
 
         val textPaint = Paint().apply {
@@ -392,6 +445,73 @@ private fun drawDetections(originalBitmap: Bitmap, response: DetectionResponse):
     }
 
     return mutableBitmap
+}
+
+fun saveImageToGallery(context: Context, bitmap: Bitmap) {
+    val filename = "processed_image_${System.currentTimeMillis()}.jpg"
+    val fos: OutputStream?
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/LettuceSee")
+        }
+
+        val imageUri: Uri? = context.contentResolver.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
+        )
+
+        fos = imageUri?.let { context.contentResolver.openOutputStream(it) }
+    } else {
+        val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString()
+        val image = File(imagesDir, filename)
+        fos = FileOutputStream(image)
+    }
+
+    fos?.use {
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+        Toast.makeText(context, "Image saved to gallery", Toast.LENGTH_SHORT).show()
+    } ?: Toast.makeText(context, "Failed to save image", Toast.LENGTH_SHORT).show()
+}
+
+@Composable
+fun BottomNavigationBar(onItemSelected: (BottomNavItem) -> Unit) {
+    var selectedTab by remember { mutableStateOf<BottomNavItem?>(null) }
+
+    NavigationBar {
+        BottomNavItem.values().forEach { item ->
+            NavigationBarItem(
+                selected = selectedTab == item,
+                onClick = {
+                    onItemSelected(item)
+                    selectedTab = item
+
+                },
+                icon = {
+                    Icon(
+                        painter = painterResource(id = item.iconRes),
+                        contentDescription = item.label,
+                        tint = if (selectedTab == item) colorResource(R.color.nav_item_color) else colorResource(R.color.gray)
+                    )
+                },
+                label = { Text(
+                    item.label,
+                    color = if (selectedTab == item) colorResource(R.color.nav_item_color) else colorResource(R.color.gray)
+                ) },
+                alwaysShowLabel = false,
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = colorResource(R.color.transparent)
+                )
+            )
+        }
+    }
+}
+
+enum class BottomNavItem(val label: String, @DrawableRes val iconRes: Int) {
+    Settings("Settings", R.drawable.baseline_settings_24),
+    TakePhoto("Take Photo", R.drawable.baseline_camera_alt_24),
+    ChooseGallery("Gallery", R.drawable.baseline_add_photo_alternate_24)
 }
 
 //private fun createImageFile(context: Context): File {
