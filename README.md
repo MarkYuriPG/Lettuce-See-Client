@@ -26,6 +26,9 @@ To maximize accessibility and usability:
 - Users can **upload lettuce images** directly from their mobile devices.
 - The system analyzes whether the lettuce is **healthy**, **diseased**, or **weed-infested**.
 
+## Model Training Repo
+- <https://github.com/MarkYuriPG/plant_health_monitoring>
+
 ## Conclusion
 
 This project highlights the potential of **AI-based** and **computer vision** solutions to **enhance plant health monitoring**, paving the way for improved agricultural accuracy and operational efficiency.
