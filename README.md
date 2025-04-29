@@ -28,6 +28,7 @@ To maximize accessibility and usability:
 
 ## Model Training Repo
 - <https://github.com/MarkYuriPG/plant_health_monitoring>
+- Found in **streamlit-app** directory, filename is train.py
 
 ## Conclusion
 
